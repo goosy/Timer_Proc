@@ -1,0 +1,53 @@
+FUNCTION_BLOCK "Timer_Proc"
+TITLE='计时器（最小计时周期为秒）'
+VERSION:'0.01'
+KNOW_HOW_PROTECT
+AUTHOR:Goosy
+NAME:TimerPrc
+FAMILY:GooLib
+
+VAR_INPUT
+  enable {S7_m_c := 'true'} : BOOL ; // 允许计时
+  PPS : BOOL ;   // 秒脉冲，可打开CPU的时钟存储器的1HZ并做为输入，也可以用GPS输入的秒脉冲
+END_VAR
+
+VAR_IN_OUT
+  count {S7_m_c := 'true'} : DINT; // 总秒数
+  hours {S7_m_c := 'true'} : DINT;
+  minutes {S7_m_c := 'true'} : INT;
+  seconds {S7_m_c := 'true'} : INT;
+END_VAR
+
+VAR
+  PPS_Follower : BOOL; //秒脉冲跟随
+END_VAR
+
+VAR_TEMP 
+  tmp_count : DINT;
+  tmp_hours : DINT;
+  tmp_minutes : INT;
+  tmp_seconds : INT;
+END_VAR
+
+BEGIN
+// 运行时间计数
+IF enable THEN
+  IF PPS AND NOT PPS_Follower THEN
+    count := count + 1; 
+  END_IF;
+  PPS_Follower := PPS;
+END_IF;
+
+tmp_count := hours * 3600 + minutes * 60 + seconds;
+IF tmp_count <> count THEN
+  IF tmp_count + 1 = count THEN
+    seconds := DInt_to_Int(count MOD 60);
+    tmp_count := (count - seconds) DIV 60;
+    minutes := DInt_to_Int(tmp_count MOD 60);
+    hours := (tmp_count - minutes) DIV 60;
+  ELSE
+    count := tmp_count;
+  END_IF;
+END_IF;
+
+END_FUNCTION_BLOCK
