@@ -1,5 +1,5 @@
 FUNCTION_BLOCK "Timer_Proc"
-TITLE='计时器（最小计时周期为秒）'
+TITLE='计时器(计时周期秒)'
 VERSION:'1.0'
 KNOW_HOW_PROTECT
 AUTHOR:Goosy
@@ -8,25 +8,25 @@ FAMILY:GooLib
 
 VAR_INPUT
   enable {S7_m_c := 'true'} : BOOL ; // 允许计时
-  reset {S7_m_c := 'true'} : BOOL ; // 计时归零
-  PPS : BOOL ;   // 秒脉冲，可打开CPU的时钟存储器的1HZ并做为输入，也可以用GPS输入的秒脉冲
+  reset {S7_m_c := 'true'} : BOOL ;  // 计时归零
+  PPS : BOOL ; // 秒脉冲，可打开CPU的时钟存储器的1HZ并做为输入，也可以用GPS输入的秒脉冲
 END_VAR
 
 VAR_IN_OUT
-  count {S7_m_c := 'true'} : DINT; // 总秒数
-  hours {S7_m_c := 'true'} : DINT;
-  minutes {S7_m_c := 'true'} : INT;
-  seconds {S7_m_c := 'true'} : INT;
+  count {S7_m_c := 'true'} : DINT;  // 总秒数
+  hours {S7_m_c := 'true'} : DINT;  // 小时数
+  minutes {S7_m_c := 'true'} : INT; // 分钟数
+  seconds {S7_m_c := 'true'} : INT; // 秒数
 END_VAR
 
 VAR
-  PPS_Follower : BOOL; //秒脉冲跟随
+  PPS_Follower : BOOL;   //秒脉冲跟随
   count_follower : DINT; //总秒数跟随
 END_VAR
 
 VAR_TEMP
   count_change : BOOL;
-  count_sum : DINT; //计算总秒数
+  count_sum : DINT;   //计算总秒数
   minutes_sum : DINT; //计算总分钟数
 END_VAR
 

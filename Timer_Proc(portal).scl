@@ -1,0 +1,67 @@
+FUNCTION_BLOCK "Timer_Proc"
+TITLE=计时器
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 1.0
+KNOW_HOW_PROTECT
+AUTHOR : Goosy
+NAME : TimerPrc
+FAMILY : GooLib
+//计时周期秒
+
+VAR_INPUT
+  enable : BOOL ; // 允许计时
+  reset : BOOL ;  // 计时归零
+  PPS : BOOL ; // 秒脉冲，可打开CPU的时钟存储器的1HZ并做为输入，也可以用GPS输入的秒脉冲
+END_VAR
+
+VAR_IN_OUT
+  count : DINT;  // 总秒数
+  hours : DINT;  // 小时数
+  minutes : INT; // 分钟数
+  seconds : INT; // 秒数
+END_VAR
+
+VAR
+  PPS_Follower : BOOL;   //秒脉冲跟随
+  count_follower : DINT; //总秒数跟随
+END_VAR
+
+VAR_TEMP
+  count_change : BOOL;
+  count_sum : DINT;   //计算总秒数
+  minutes_sum : DINT; //计算总分钟数
+END_VAR
+
+BEGIN
+
+IF #reset THEN // 计时复位
+  #count := 0;
+  #count_follower := 0;
+  #seconds := 0;
+  #minutes := 0;
+  #hours := 0;
+  RETURN;
+END_IF;
+
+#count_change := #count <> #count_follower;
+IF NOT #count_change THEN // 总计数没有被改变
+  #count_sum := #hours * 3600 + #minutes * 60 + #seconds;
+  IF #count_sum <> #count THEN // 时分秒改变,则应用改变后的时分秒
+    #count := #count_sum;
+  ELSIF #enable AND #PPS AND NOT #PPS_Follower THEN // 时分秒没有改变，则运行时间计数
+    #count := #count + 1; 
+    #count_change := TRUE;
+  END_IF;
+END_IF;
+
+IF #count_change THEN // 总计数被改变
+  #seconds := DInt_to_Int(#count MOD 60);
+  #minutes_sum := (#count - #seconds) / 60;
+  #minutes := DInt_to_Int(#minutes_sum MOD 60);
+  #hours := (#minutes_sum - #minutes) / 60;
+END_IF;
+
+#count_follower := #count;
+#PPS_Follower := #PPS;
+
+END_FUNCTION_BLOCK
