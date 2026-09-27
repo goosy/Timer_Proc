@@ -1,40 +1,41 @@
 FUNCTION_BLOCK "Timer_Proc"
-TITLE=计时器
+TITLE=Timer
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
 KNOW_HOW_PROTECT
 AUTHOR : Goosy
 NAME : TimerPrc
 FAMILY : GooLib
-//计时周期秒
+// Counting period: 1 second
 
 VAR_INPUT
-  enable : BOOL ; // 允许计时
-  reset : BOOL ;  // 计时归零
-  PPS : BOOL ; // 秒脉冲，可打开CPU的时钟存储器的1HZ并做为输入，也可以用GPS输入的秒脉冲
+  enable : BOOL ; // enable counting
+  reset : BOOL ;  // reset the time to zero
+  PPS : BOOL ; // pulse per second: the CPU 1 Hz clock memory bit or a GPS PPS signal
 END_VAR
 
 VAR_IN_OUT
-  count : DINT;  // 总秒数
-  hours : DINT;  // 小时数
-  minutes : INT; // 分钟数
-  seconds : INT; // 秒数
+  count : DINT;  // total seconds
+  hours : DINT;  // hours
+  minutes : INT; // minutes
+  seconds : INT; // seconds
 END_VAR
 
 VAR
-  PPS_Follower : BOOL;   //秒脉冲跟随
-  count_follower : DINT; //总秒数跟随
+  PPS_Follower : BOOL;   // PPS follower for edge detection
+  count_follower : DINT; // total seconds follower
 END_VAR
 
 VAR_TEMP
   count_change : BOOL;
-  count_sum : DINT;   //计算总秒数
-  minutes_sum : DINT; //计算总分钟数
+  count_sum : DINT;   // computed total seconds
+  minutes_sum : DINT; // computed total minutes
 END_VAR
 
 BEGIN
 
-IF #reset THEN // 计时复位
+IF #reset THEN // reset the timer
+  #reset := FALSE; // auto-clear so a single HMI write resets once
   #count := 0;
   #count_follower := 0;
   #seconds := 0;
@@ -44,17 +45,17 @@ IF #reset THEN // 计时复位
 END_IF;
 
 #count_change := #count <> #count_follower;
-IF NOT #count_change THEN // 总计数没有被改变
+IF NOT #count_change THEN // total seconds not changed externally
   #count_sum := #hours * 3600 + #minutes * 60 + #seconds;
-  IF #count_sum <> #count THEN // 时分秒改变,则应用改变后的时分秒
+  IF #count_sum <> #count THEN // hours/minutes/seconds changed: apply them
     #count := #count_sum;
-  ELSIF #enable AND #PPS AND NOT #PPS_Follower THEN // 时分秒没有改变，则运行时间计数
-    #count := #count + 1; 
+  ELSIF #enable AND #PPS AND NOT #PPS_Follower THEN // otherwise count running time
+    #count := #count + 1;
     #count_change := TRUE;
   END_IF;
 END_IF;
 
-IF #count_change THEN // 总计数被改变
+IF #count_change THEN // total seconds changed
   #seconds := DInt_to_Int(#count MOD 60);
   #minutes_sum := (#count - #seconds) / 60;
   #minutes := DInt_to_Int(#minutes_sum MOD 60);
